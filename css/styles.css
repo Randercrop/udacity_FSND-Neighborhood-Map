@@ -26,6 +26,6 @@ body {
   }
   @media only screen and (max-width : 425px) {
 #map {
-  left: 150px;
+  left: 175px;
 }
   }
