@@ -1,3 +1,4 @@
+'use strict';
 var map, clientID, clientSecret;
 var allMarkers = [];
 var largeInfoWindow;
@@ -61,16 +62,19 @@ var AppViewModel = function() {
         var category = self.selectedCategory();
         
         if(category === "All") {
+            showListings(allMarkers, allMarkers);
             return self.locations;
         } else {
             var filteredList = [];
 
-            self.locations.forEach((location) => {
-                if(location.type.join('-').includes(category)){
-                    filteredList.push(location);
-                    console.log((requestFourSquareInfo(location)));
+            let markersToView = [];
+            for (let i = 0; i < self.locations.length; i++){
+                if(self.locations[i].type.join('-').includes(category) ){
+                    filteredList.push(self.locations[i]);
+                    markersToView.push(allMarkers[i]);
+                    showListings(markersToView, allMarkers);
                 }
-            })
+            }
             return filteredList;
         }
     });
@@ -111,7 +115,7 @@ function initMap() {
             this.animateAndOpenWindow(markerInContext, largeInfoWindow);
         });
     }
-    showListings(allMarkers);
+    showListings(allMarkers, allMarkers);
 }
 
 // this function is called whenever a marker or element is clicked
@@ -128,7 +132,6 @@ function animateAndOpenWindow(marker, infoWindow) {
 // one infowindow which will open at the marker that is clicked, and populate based
 // on that markers position.
 async function openInfoWindow(marker, infowindow) {
-    console.log(`${marker} is pretty similar to ${infowindow}`);
     // Check to make sure the infowindow is not already opened on this marker.
     if (infowindow.marker != marker) {
         infowindow.marker = marker;
@@ -167,22 +170,34 @@ async function requestFourSquareInfo(storePoslat, storePoslng, storeTitle) {
         "&limit=1&v=20181114&limit=1" +
         `&ll=${storePoslat},${storePoslng}` +
         `&query=${storeTitle}`;
-    const response = await fetch(fsurl);
-    return jsonResponse = await response.json();
+    try{
+        const response = await fetch(fsurl);
+        return await response.json();
+    } catch (e) {
+        alert(`Foursquare api failed at url: ${fsurl}`);
+        return false;
+    }
 }
 
 // This function will loop through the markers array and display them all.
-function showListings(markersToShow) {
-    var bounds = new google.maps.LatLngBounds();
-    // Extend the boundaries of the map for each marker and display the marker
-    for (var i = 0; i < markersToShow.length; i++) {
-        markersToShow[i].setMap(map);
-        bounds.extend(markersToShow[i].position);
+function showListings(markersToShow, allMarkers) {
+    try {    
+        var bounds = new google.maps.LatLngBounds();
+        // Extend the boundaries of the map for each marker and display the marker
+        for (var j = 0; j < allMarkers.length; j++) {
+            allMarkers[j].setVisible(false);
+        }
+        for (var i = 0; i < markersToShow.length; i++) {
+            markersToShow[i].setVisible(true);
+            bounds.extend(markersToShow[i].position);
+        }
+        map.fitBounds(bounds);
+    }catch(e) {
+        return false;
     }
-    map.fitBounds(bounds);
 }
 
-gMapError = function gMapError() {
+const gMapError = function gMapError() {
     alert('Oops. Google Maps did not load. Please refresh the page and try again!');
 };
 
